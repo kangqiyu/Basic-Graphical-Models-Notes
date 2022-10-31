@@ -1,0 +1,626 @@
+% \documentclass[a4paper,10pt]{article} % or whatever
+% \documentclass[letterpaper,10pt]{article} % or whatever
+\documentclass{article}
+
+% if you need to pass options to natbib, use, e.g.:
+     \PassOptionsToPackage{numbers, compress}{natbib}
+
+\usepackage[preprint]{notes}
+
+\newcommand{\ignore}[1]{}
+% to avoid loading the natbib package, add option nonatbib:
+\usepackage{dsfont}
+\input{preamble}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows}
+%  \usepackage{subfigure} 
+\pdfminorversion=7
+% \usepackage{newtxmath}
+%\floatname{algorithm}{Procedure}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\newcommand{\bsl}[1]{\boldsymbol{#1}}
+\newcommand{\one}[1]{\norm{#1}_{1}}
+\newcommand{\bfs}[1]{\textbf{({#1}) }}
+\newcommand{\typss}{\mathcal{P}_n}
+\newcommand{\boxx}[1]{\noindent\fbox{%
+    \parbox{\textwidth}{%
+        	#1
+    }%
+}} 
+% \usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+    \node[shape=circle, draw, inner sep=0.1pt, 
+        minimum height=5pt] (char) {\vphantom{1g}#1};}}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage{microtype}      % microtypography
+
+\title{Basic Graphical Models Notes}
+\usepackage{titlesec}
+\usepackage{fancyvrb}
+\setcounter{tocdepth}{4}
+\setcounter{secnumdepth}{4}
+\titleformat{\paragraph}
+{\normalfont\normalsize\bfseries}{\theparagraph}{1em}{}
+\titlespacing*{\paragraph}
+{0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+\crefname{paragraph}{section}{sections}
+% \makeatletter
+% \newcommand\paragraph{\@startsection{paragraph}{4}{\z@}{-2.5ex\@plus -1ex \@minus -.25ex}{1.25ex \@plus .25ex}{\normalfont\normalsize\bfseries}}
+% \newcommand\subparagraph{\@startsection{subparagraph}{5}{\z@}{-2.5ex\@plus -1ex \@minus -.25ex}{1.25ex \@plus .25ex}{\normalfont\normalsize\bfseries}}
+% \makeatother
+
+\usepackage{amsmath}
+\usepackage{pifont}
+\newcommand{\cmark}{\text{\ding{51}}}
+\newcommand{\xmark}{\text{\ding{55}}}
+\newcommand{\gp}{\operatorname{gp}}
+\newcommand{\ord}{\operatorname{ord}}
+\newcommand{\Sym}{\operatorname{Sym}}
+\newcommand{\Stab}{\operatorname{Stab}}
+\newcommand{\Orb}{\operatorname{Orb}}
+\newcommand{\HCF}{\operatorname{HCF}}
+\newcommand{\LCM}{\operatorname{LCM}}
+\newcommand{\Alt}{\operatorname{Alt}}
+\newcommand{\Isom}{\operatorname{Isom}}
+\newcommand{\GL}{\operatorname{GL}}
+\newcommand{\Ker}{\operatorname{Ker}}
+\newcommand{\Conj}{\operatorname{Conj}}
+\newcommand{\Conv}{\operatorname{Conv}}
+\newcommand{\cl}{\operatorname{cl}}
+\newcommand{\ri}{\operatorname{ri}}
+\newcommand{\inte}{\operatorname{int}}
+\newcommand{\Aff}{\operatorname{Aff}}
+\newcommand{\Cone}{\operatorname{Cone}}
+\newcommand{\dom}{\operatorname{dom}}
+\newcommand{\Ext}{\operatorname{Ext}}
+\newcommand{\rb}{\partial_{\mathrm{ri}}}
+\newcommand{\Epi}{\operatorname{Epi} }
+% \newcommand{\Ima}{\operatorname{Im}}
+% \newcommand{\Id}{\operatorname{Id}}
+\begin{document}
+
+\maketitle
+Probabilistic graphical models provides a unifying framework for capturing complex dependencies among random variables, and building large-scale multivariate statistical models. Working with \tb{exponential family} representations, and exploiting the \tb{conjugate duality between the cumulant function and the entropy for exponential families}, we develop general variational representations of the problems of computing \tb{likelihoods, marginal probabilities} and most probable conﬁgurations.
+
+We describe how a wide variety of algorithms — among them sum-product, cluster variational methods, expectation-propagation, mean ﬁeld methods, max-product and linear programming relaxation, as well as conic programming relaxations — can all be understood in terms of exact or approximate forms of these variational representations.
+\section{Introduction}
+Graphical models are the unified  model to deal with exmaples like phylogenies, pedigrees, hidden Markov models, Markov random fields, and Kalman filters. 
+
+\begin{itemize}
+    \item For suitably sparse graphs, the \tb{junction tree algorithm} provides a systematic solution to the problem of computing likelihoods and other statistical quantities associated with a graphical model.
+    \item If not sparse, Markov chain Monte Carlo (MCMC) framework or variational methods are needed.
+\end{itemize}
+
+Variations means to approximate the optimization problem by relaxation in various ways, either by approximating the function to be optimized or by approximating the set over which the optimization takes place. 
+
+In our view, the most promising avenue toward a variational methodology tuned to statistics is to build on existing links between \tb{variational analysis and the exponential family of distributions}. \tb{Convexity} lies at the heart.
+
+\begin{enumerate}
+    \item Section 2 introduce graphical models.
+    \item Section 3introduce exponential families, focusing on the mathematical links to convex analysis, and thus anticipating our development of variational methods. We care the conjugate dual relation associated with exponential families. From this, a general variational representation for computing likelihoods and marginal probabilities in exponential families will be introduced.
+    \item In Section 4, we discuss the connection between the Bethe approximation and the sum-product algorithm, and develop the connections between Bethe-like approximations and other algorithms.
+    \item In Section 5, we discuss the class of mean field methods, and get \tb{lower bounds} on the likelihood.
+    \item of variational methods in parameter estimation, including both the fully observed and partially observed cases, as well as both frequentist and Bayesian settings.
+    \item In section 7, discusses variational methods based on convex relaxations of the exact variational principle, many of which are also guaranteed to yield \tb{upper bounds} on the log likelihood.
+    \item Section 8 discuss mode computation, with particular emphasis on the case of discrete random variables.
+    \item In Section 9, we discuss the broader class of conic programming relaxations, and show how they can be understood in terms of semidefinite constraints imposed via moment matrices.
+\end{enumerate}
+
+\section{Basic Definitions and Concepts}
+
+\subsection{Three Graphical Model with Transformations}
+A probabilistic graphical model is a graph $G(V, E)$ representing a family of probability distributions
+\begin{itemize}
+    \item that share the same factorization of the probability distribution; and
+    \item that share the same independence structure.
+\end{itemize}
+Consider a probability distribution over $x=\left(x_{1}, x_{2}, \ldots, x_{n}\right)$:
+\begin{align*}
+\mu\left(x_{1}, x_{2}, \ldots, x_{n}\right)
+\end{align*}
+a graphical model has a graph and a set of functions over a subset of random variables which define the probability distribution of interest.
+
+$\bullet$ \tb{Overview:}
+\begin{enumerate}
+    \item \tb{undirected graphical model = Markov Random Field (MRF)}
+    \begin{align}
+\mu(x)=\frac{1}{Z} \prod_{c \in \mathcal{C}(\mathrm{G})} \psi_{c}\left(x_{c}\right)\label{eq:max_undir_graph}
+\end{align}
+where $\mathcal{C}(\mathrm{G})$ is the set of \tb{all cliques} in the undirected graph $G(V, E)$. Note $\mathcal{C}(\mathrm{G})$ can be change to the set of \tb{all maximal cliques} straightforwardly by multiplying the non-maximal cliques into the maximal ones.
+\item \tb{factor graph model (FG)}
+\begin{align*}
+\mu(x)=\frac{1}{Z} \prod_{a \in F} \psi_{a}\left(x_{\partial a}\right)
+\end{align*}
+where $F$ is the set of factor nodes in the undirected bipartite graph $G(V, F, E)$ and $\partial a$ is the set of neighbors of the node $a$
+\item \tb{directed graphical model = Bayesian Network (BN)}
+ \begin{align*}
+\mu(x)=\prod_{i \in V} \mu\left(x_{i} \mid x_{\pi(i)}\right)
+\end{align*}
+where $\pi(i)$ is the set of parent nodes in the directed graph $G(V, E)$
+\end{enumerate}
+
+\subsubsection{Undirected Graphical Models}
+\paragraph{Undirected Pairwise Graphical Models}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{Figs/1.png}
+    \caption{Undirected pairwise graphical models example}
+    \label{fig:Pairwise_Graph}
+\end{figure}
+
+\begin{itemize}
+    \item Graph $G=(V, E)$
+    \item Alphabet $\mathcal{X}$
+    \item Compatibility function $\psi_{i j}: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}_{+}$, for all $(i, j) \in E$
+\begin{align}
+\mu(x)=\frac{1}{Z} \prod_{(i, j) \in E} \psi_{i j}\left(x_{i}, x_{j}\right)\label{eq:bdadc}
+\end{align}
+\item pairwise MRF only allow compatibility functions over two variables
+\end{itemize}
+
+\paragraph{Undirected General Graphical Models (MRF)}
+The distrubtion function has been shown in \cref{eq:max_undir_graph}.
+
+Consider a fixed graph $G(V, E)$
+\begin{itemize}
+    \item the factorizations implied by the graph under MRF and pairwise MRF are different, e.g. $\left(x_{1}, x_{11}, x_{12}\right)$
+    \item independencies implied by the graph under MRF or pairwise MRF are the \tb{same}, however pairwise MRF represent \tb{less possible distributions}.
+    \item by choosing the right compatibility functions any model represented by pairwise MRF can be represented by MRFs, \tb{but not the other way around}
+\end{itemize}
+\begin{rema}
+Some MRF's do not factorize: a simple example can be constructed on a cycle of 4 nodes with some infinite energies, i.e. configurations of zero probabilities, even if one, more appropriately, allows the infinite energies to act on the complete graph on $V$.
+
+MRF's factorize if at least one of the following conditions is fulfilled:
+\begin{enumerate}
+    \item the density is positive (by the Hammersley–Clifford theorem)
+    \item the graph is chordal (by equivalence to a Bayesian network)
+\end{enumerate}
+\end{rema}
+
+\paragraph{Conversion from General to Pairwise}\label{sec:con_gen_pair}
+With \tb{additional nodes}, it is possible to describe how any Markov random field with discrete random variables can be converted to an equivalent pairwise form (i.e., with interactions only between pairs of variables). However, it still has flaw that cannot totally be written in the form of pure product as in \cref{eq:bdadc}. Summation is still needed to get the marginal.
+\begin{proof}
+To illustrate the general principle, it suffices to show how to convert a compatibility function $\psi_{123}$ defined on a triplet $\left\{x_{1}, x_{2}, x_{3}\right\}$ of random variables into a pairwise form. To do so, we introduce an auxiliary node $A$, and associate with it random variable $z$ that takes values in the Cartesian product space $\mathcal{X}_{1} \times \mathcal{X}_{2} \times \mathcal{X}_{3} .$ In this way, each configuration of $z$ can be identified with a triplet $\left(z_{1}, z_{2}, z_{3}\right)$. For each $s \in\{1,2,3\}$, we define a pairwise compatibility function $\psi_{A s}$, corresponding to the interaction between $z$ and $x_{s}$, by $\psi_{A s}\left(z, x_{s}\right):=\left[\psi_{123}\left(z_{1}, z_{2}, z_{3}\right)\right]^{1 / 3} \mathbb{I}\left[z_{s}=x_{s}\right] .$ (The purpose of the $1 / 3$ power is to incorporate $\psi_{123}$ with the correct exponent.) With this definition, it is straightforward to verify that the equivalence
+\begin{align}
+\psi_{123}\left(x_{1}, x_{2}, x_{3}\right)=\sum_{z} \prod_{s=1}^{3} \psi_{A s}\left(z, x_{s}\right)\label{eq:}
+\end{align}
+holds, so that our augmented model faithfully captures the interaction defined on the triplet $\left\{x_{1}, x_{2}, x_{3}\right\}$.
+\end{proof}
+
+
+\subsubsection{Factor Graph Models}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{Figs/2.png}
+    \caption{Factor graph example.}
+    \label{fig:factor_Graph}
+\end{figure}
+\begin{itemize}
+    \item Factor graph $G=(V, F, E)$
+    \item Variable nodes $i, j, k, \cdots \in V$, $x_{i} \in \mathcal{X}$, for all $i \in V$
+    \item Function nodes $a, b, c, \cdots \in F$
+    \item Function node $\psi_{a}: \mathcal{X}^{\partial a} \rightarrow \mathbb{R}_{+}$, for all $a \in F$
+\begin{align}
+    \mu(x)=\frac{1}{Z} \prod_{a \in F} \psi_{a}\left(x_{\partial a}\right)
+\end{align}
+\end{itemize}
+
+
+\subsubsection{Conversion between Factor Graphs and Undirected  Graphical ModelsThe}
+\boxx{
+$\bullet$ \tb{From pairwise model to factor graph:}
+
+A pairwise model on $G(V, E)$ with alphabet $\mathcal{X}$ can be represented by a
+factor graph $G^{\prime}\left(V^{\prime}, F^{\prime}, E^{\prime}\right)$ with $V^{\prime}=V, F^{\prime} \simeq E,\left|E^{\prime}\right|=2|E|, \mathcal{X}^{\prime}=\mathcal{X}$.
+
+$\diamond$ \tb{Key:} Put a factor node on each edge.}
+
+\boxx{
+$\bullet$ \tb{From factor graph to a general undirected graphical model (MRF):}
+
+A factor model on $G(V, F, E)$ with alphabet $\mathcal{X}$ can be represented by a
+MRF on $G^{\prime}\left(V^{\prime}, E^{\prime}\right)$ with $V^{\prime}=V, E^{\prime} \simeq \sum_{a \in F}|\partial a|^{2}, \mathcal{X}^{\prime}=\mathcal{X}$.
+
+$\diamond$ \tb{Key:}  A factor node is turned into a clique.}
+
+\boxx{
+$\bullet$ \tb{From factor graph to a pairwise model:}
+
+A factor model on $G(V, F, E)$ can be represented by a pairwise model on
+$G^{\prime}\left(V^{\prime}, E^{\prime}\right)$ with $V^{\prime}=V \cup F, E^{\prime}=E, \mathcal{X}^{\prime}=\mathcal{X}^{\Delta}, \Delta=\max _{a \in F} \operatorname{deg}(a)$. Similar to \cref{sec:con_gen_pair}.
+
+$\diamond$ \tb{Key:}A factor node is represented by a large variable node}
+
+\begin{rema}\bfs{factor graphs vs. undirected graphical models}
+Factor graphs are more ``fine grained'' than undirected graphical models
+\begin{itemize}
+    \item  \tb{set of independencies} represented by MRF is the same as FG
+    \item but FG can represent a larger set of factorizations
+\end{itemize}
+\end{rema}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Figs/3.png}
+    \caption{MRF vs. Factor graph. All three encodes same independencies, but different factorizations (in particular the degrees of freedom in the compatibility functions are $3|\mathcal{X}|^{2}$ vs. $\left.|\mathcal{X}|^{3}\right)$}
+    \label{fig:diff_fartor_ugm}
+\end{figure}
+\subsubsection{Bayesian Network (Directed Graphical Model)}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Figs/4.png}
+    \caption{Bayesian network example.}
+    \label{fig:bayes1}
+\end{figure}
+
+Bayesian network is specified by
+\begin{itemize}
+    \item directed acyclic graph $G=(V, D)$
+    \item alphabet $\mathcal{X}$
+    \item conditional probability $\mu_{i}(\cdot \mid \cdot): \mathcal{X} \times \mathcal{X}^{\pi(i)} \rightarrow \mathbb{R}_{+}$, for $i \in V$
+\begin{align*}
+\mu(x)=\prod_{i \in V} \mu_{i}\left(x_{i} \mid x_{\pi(i)}\right)
+\end{align*}
+\item we do not need normalization $(1 / Z)$ since
+\begin{align*}
+\sum_{x_{i} \in \mathcal{X}} \mu_{i}\left(x_{i} \mid x_{\pi(i)}\right)=1 \Rightarrow \sum_{x \in \mathcal{X}^{V}} \mu(x)=1
+\end{align*}
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Figs/5.png}
+    \caption{MRF and BN are incomparable, some independence  is lost in conversion in both direction.}
+    \label{fig:bayesvsmrf}
+\end{figure}
+\begin{exma}\bfs{Bayes networks with observed variables}
+\begin{itemize}
+    \item $V=H \cup O$
+    \item  Hidden variables: $x=\left(x_{i}\right)_{i \in H}$
+    \item Observed variables: $y=\left(y_{i}\right)_{i \in O}$
+\begin{align*}
+\mu(x, y)=\prod_{i \in H} \mu\left(x_{i} \mid x_{\pi(i) \cap H}, y_{\pi(i) \cap O}\right) \prod_{i \in O} \mu\left(y_{i} \mid x_{\pi(i) \cap H}, y_{\pi(i) \cap O}\right)
+\end{align*}
+\item Objective: 
+Typically interested in $\mu_{y}(x) \equiv \mu(x \mid y)$ and
+$\arg \max _{x} \mu_{y}(x)$
+\end{itemize}
+\end{exma}
+
+\subsubsection{Conversion between Bayesian Networks and Factor Graphs}
+In general because MRF and BN are incomparable, some independence structure will be lost in conversion.
+
+\boxx{
+$\bullet$ \tb{From Bayesian network to factor graph:}
+
+A Bayes network $G=(V, D)$ with alphabet $\mathcal{X}$ can be represented by a factor graph model on $G^{\prime}=\left(V^{\prime}, F^{\prime}, E^{\prime}\right)$ with $V^{\prime}=V,\left|F^{\prime}\right|=|V|$, $\left|E^{\prime}\right|=|D|+|V|, \mathcal{X}^{\prime}=\mathcal{X} .$
+
+$\diamond$ \tb{Key:}  
+
+\begin{itemize}
+    \item represent by a factor node each conditional probability
+    moralization for conversion from BN to MRF (we will learn this)
+\end{itemize}}
+
+% \subsubsection{Graph Concepts from \cite{koller2009probabilistic}}
+
+
+\boxx{
+$\bullet$ \tb{
+From factor graph to Bayesian network:}
+
+A factor model on $G=(V, F, E)$ with alphabet $\mathcal{X}$ can be represented by a
+Bayes network $G^{\prime}=\left(V^{\prime}, D^{\prime}\right)$ with $V^{\prime}=V$ and $\mathcal{X}^{\prime}=\mathcal{X}$.
+
+$\diamond$ \tb{Key:} 
+
+\begin{itemize}
+    \item  take a topological ordering, e.g. $x_{1}, \ldots, x_{n}$
+    \item for each node $i$, starting from the first node, find a minimal set $U \subseteq\{1, \ldots, i-1\}$ such that $x_{i}$ is conditionally independent of $x_{\{1, \ldots, i-1\} \backslash U}$ given $x_{U}$. (we will learn how to do this)
+    \item in general the resulting Bayesian network is dense
+\end{itemize}
+}
+
+\subsection{Markov Property}
+\begin{exma}$$
+\begin{gathered}
+X-Y-Z \\
+X \perp Z \mid Y \\
+\mu(X, Y, Z)=f(X, Y) g(Y, Z)
+\end{gathered}$$
+\end{exma}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{Figs/6.png}
+    \caption{Markov property.}
+    \label{fig:Markov}
+\end{figure}
+Let $A \cup B \cup C$ be a partition of $V$, we have
+\begin{defa}\bfs{Graph Separation}
+ $B$ \tb{separates} $A$ from $C$ if any path starting in $A$ and terminating in $C$ has at least one node in $B$
+\end{defa}
+% \begin{defa}\bfs{Global Markov Property}
+%  distribution $\mu$ over $\mathcal{X}^{V}$ satisfies the \tb{global Markov property} on $G$ if for \tb{any} partition $(A, B, C)$ such that $B$ separates $A$ from $C$,
+% $$\mu\left(x_{A}, x_{C} \mid x_{B}\right)=\mu\left(x_{A} \mid x_{B}\right) \mu\left(x_{C} \mid x_{B}\right)$$
+% \end{defa}
+
+\subsubsection{Markov Property for Undirected Graphs}
+\begin{defa}\bfs{Global Markov Property}
+ We say $\mu(\cdot)$ satisfy the \tb{global Markov property ($\mathrm{G}$)} w.r.t. a graph $G$ if for any partition $(A, B, C)$ such that $B$ separates $A$ from $C$,
+\begin{align*}
+\mu\left(x_{A}, x_{C} \mid x_{B}\right)=\mu\left(x_{A} \mid x_{B}\right) \mu\left(x_{C} \mid x_{B}\right)
+\end{align*}
+\end{defa}
+\begin{defa}\bfs{Local Markov Property}
+ We say $\mu(\cdot)$ satisfy the \tb{local Markov property ($\mathrm{L}$)}  w.r.t. a graph $G$ if for any $i \in V$,
+\begin{align*}
+\mu\left(x_{i}, x_{\text {rest }} \mid x_{\partial i}\right)=\mu\left(x_{i} \mid x_{\partial i}\right) \mu\left(x_{\text {rest }} \mid x_{\partial i}\right)
+\end{align*}
+\end{defa}
+\begin{defa}\bfs{Pairwise Markov Property}
+ We say $\mu(\cdot)$ satisfy the \tb{pairwise Markov property  ($\mathrm{P}$)}  w.r.t. a graph $G$ if for any $i, j \in V$ that are \tb{not connected} by an edge
+\begin{align*}
+\mu\left(x_{i}, x_{j} \mid x_{\text {rest }}\right)=\mu\left(x_{i} \mid x_{\text {rest }}\right) \mu\left(x_{j} \mid x_{\text {rest }}\right)
+\end{align*}
+\end{defa}
+
+\paragraph{Conditional Independence: Local, Global and Pairwise}
+$\bullet$ \tb{In general:} $(\mathrm{G}) \Rightarrow(\mathrm{L}) \Rightarrow(\mathrm{P})$
+We need the following lemma:
+\begin{lema}\bfs{Conditional Independence Lemmas}\label{lem:gvdfsfz}
+For any deterministic function $h(\cdot)$,
+\begin{align}
+X \perp Y \mid Z & \Longrightarrow \quad X \perp Y \mid(Z, h(Y)) \label{eq:hdfe}\\
+X \perp Y \mid Z & \Longrightarrow \quad X \perp h(Y) \mid Z \label{eq:mbdre}
+\end{align}
+\end{lema}
+\begin{rema}
+See also \cite[Page 216]{durrett2019probability} for discussion of conditional independence, where it points out  
+\centerline{``\tb{conditioning on a sub or sup sigma algebra, it is \tb{not} necessarily conditional independent}''.}
+
+\end{rema}
+\begin{cora}\label{cora:dfax}From \cref{lem:gvdfsfz}, we have
+\begin{itemize} 
+    \item Decomposition:
+\begin{align*}
+{X} \perp {Y}, {W} \mid {Z} \Longrightarrow {X} \perp {Y} \mid {Z}.
+\end{align*}
+\item Weak union:
+\begin{align*}
+{X} \perp {Y}, {W} \mid {Z} \Longrightarrow {X} \perp {Y} \mid {Z}, {W}
+\end{align*}
+\end{itemize}
+In addition, we also have 
+\begin{itemize}
+\item Contraction:
+\begin{align*}
+{X} \perp {W} \mid {Z}, {Y} \text{ and } {X} \perp {Y} \mid {Z} \Longrightarrow {X} \perp {Y}, {W} \mid {Z}
+\end{align*}
+\end{itemize}
+\end{cora}
+\begin{proof} (of \cref{lem:gvdfsfz})
+\begin{align*}
+\begin{aligned}
+\mu(x, y, h(Y)=h, z) &=\mu(x, y, z) \mathbb{I}(h(y)=h) \\
+&=f(x, z) g(y, z) \mathbb{I}(h(y)=h)
+\end{aligned}
+\end{align*}
+This implies both $X \perp(Y, h(Y)) \mid Z$ and $X \perp Y \mid(Z, h(Y))$.
+
+$$\mu(x, h, z)=\sum_{y} \mu(x, y, h, z)=f(x, z) \underbrace{\sum_{y} g(y, z) \mathbb{I}(h(y)=h)}_{\tilde{g}(h, z)}.$$ This implies $X \perp h(Y) \mid Z$.
+\end{proof}
+\begin{proof} (of \cref{cora:dfax})
+Decomposition is easy. Weak union is also easy: ${X} \perp {Y}, {W} \mid {Z} \Longrightarrow {X} \perp {Y}, W \mid {Z}, {W} \Longrightarrow {X} \perp {Y} \mid {Z}, {W}$.  For contraction, $\mu({X} \mid {Z}, {Y},W ) = \mu({X} \mid {Z}, Y ) = \mu({X} \mid {Z})$.
+\end{proof}
+\begin{proof} (of  $(\mathrm{G}) \Rightarrow(\mathrm{L}) \Rightarrow(\mathrm{P})$)
+
+Obviously: $(\mathrm{G}) \Rightarrow(\mathrm{L})$. The proof of  $(\mathrm{L}) \Rightarrow(\mathrm{P})$ is directly from \cref{lem:gvdfsfz}: 
+
+\cref{eq:hdfe} $\Longrightarrow$ $x_{i} \perp x_{\mathrm{rest}} \mid \left(x_{V \backslash\{i, j\}}\right) $, \cref{eq:mbdre} $\Longrightarrow$ $x_{i} \perp x_{\mathrm{rest}} \mid\left(x_{V \backslash\{i, j\}}\right)$
+\end{proof}
+
+$\bullet$ \tb{In general: $(\mathrm{P}) \nRightarrow (\mathrm{G})$}
+
+But $(\mathrm{P}) \Rightarrow(\mathrm{G})$ if the following holds for all disjoint subsets $A, B, C$, and $D \subseteq V$ :
+\begin{align}
+   \text{``If $x_{A} \perp x_{B} \mid\left(x_{C}, x_{D}\right)$ and $x_{A} \perp x_{C} \mid\left(x_{B}, x_{D}\right)$, then $x_{A} \perp\left(x_{B}, x_{C}\right) \mid x_{D}$''}  \label{eq:hdfz}
+\end{align}
+
+\begin{lema}\bfs{Intersection Lemma}
+For \tb{strictly positive probability distributions}, \tb{if $\mu(x)>0$ for all $x \in \mathcal{X}$}, the following  holds:
+\begin{align*}
+X \perp Y \mid Z, W   \text { and }  X \perp W \mid Z, Y \Rightarrow X \perp W, Y \mid Z
+\end{align*}
+\end{lema}
+\begin{rema}
+So if we add the strictly positive assumption, we can get \cref{eq:hdfz} and therefore $(\mathrm{P}) \Rightarrow(\mathrm{G})$. See below.
+\end{rema}
+\begin{proof}
+By assumption:
+\begin{align*}
+\mu(X \mid Z, W, Y)=\mu(X \mid Z, W) \wedge \mu(X \mid Z, W, Y)=\mu(X \mid Z, Y) \Longrightarrow \mu(X \mid Z, Y)=\mu(X \mid Z, W)
+\end{align*}
+Using this equality, together with the law of total probability applied to $\mu(X \mid Z)$ :
+\begin{align*}
+\begin{aligned}
+\mu(X \mid Z) &=\sum_{w \in W} \mu(X \mid Z, W=w) \mu(W=w \mid Z) \\
+&=\sum_{w \in W} \mu(X \mid Y, Z) \mu(W=w \mid Z) \\
+&=\mu(X \mid Z, Y) \sum_{w \in W} \mu(W=w \mid Z) \\
+&=\mu(X \mid Z, Y)
+\end{aligned}
+\end{align*}
+Since $\mu(X \mid Z, W, Y)=\mu(X \mid Z, Y)$ and $\mu(X \mid Z, Y)=\mu(X \mid Z)$, it follows that $\mu(X \mid Z, W, Y)=\mu(X \mid Z) \Longleftrightarrow X \perp Y, W \mid Z$.
+\end{proof}
+
+$\bullet$ \tb{Proof of $(\mathrm{P}) \Rightarrow(\mathrm{G})$ when \cref{eq:hdfz}  holds:}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{Figs/7.png}
+    \caption{ $(\mathrm{P}) \Rightarrow(\mathrm{G})$ }
+    \label{fig:proofofptog}
+\end{figure}
+\begin{proof}
+By induction over $s \triangleq|B|$:
+\begin{enumerate}
+    \item initial condition: when $s=n-2,(\mathrm{P}) \Leftrightarrow(\mathrm{G})$. (true from the definition)
+    \item induction step:
+assume $(\mathrm{G})$ for any $B$ with $|B| \geq s$ and prove it for $|B|=s-1$
+\end{enumerate}
+W.L.O.G, we consider a set $A$ with $|A| \geq 2$ and $B$ with $|B|=s$ (see \cref{fig:proofofptog}). By induction assumption, for any $i \in A$, we have
+\begin{itemize}
+    \item $x_{C} \perp x_{\widetilde{A}} \mid\left(x_{B}, x_{i}\right)$
+    \item $x_{C} \perp x_{i} \mid\left(x_{B}, x_{\widetilde{A}}\right)$
+\end{itemize}
+ By  \cref{eq:hdfz}, we have 
+    $x_{C} \perp\left(x_{\widetilde{A}}, x_{i}\right) \mid x_{B}$. By induction, we see that $(\mathrm{G})$ holds for all sizes of $B$.
+\end{proof}
+
+\paragraph{Hammersley-Clifford}
+\begin{thma}\bfs{Hammersley-Clifford Theorem}\label{thm:ham_cliff}
+A strictly positive distribution $\mu(x)$ (i.e. $\mu(x)>0$ for all $x$ ) satisfies the global Markov property $(\mathrm{G})$ with respect to $G(V, E)$ if and only if it can be factorized according to $G$ :
+$$(\mathrm{F}): \quad \mu(x)=\frac{1}{Z} \prod_{c \in \mathcal{C}(\mathrm{G})} \psi_{c}\left(x_{c}\right)$$
+\end{thma}
+\begin{rema}
+In other words, any $\mu(x)$ with Markov property can be represented with MRF. Note three Markov property  are equivalent to each other under the strictly positive distribution  assumption.
+\end{rema}
+\begin{proof}
+$\diamond$  $(\mathrm{F}) \Rightarrow(\mathrm{G})$ easy
+
+$\diamond$ $(\mathrm{F}) \Leftarrow(\mathrm{G})$ requires much more effort, and we first prove that  $(\mathrm{G})$ (i.e. $(\mathrm{P})$) implies the following:
+\begin{itemize}
+    \item For any  $A \subseteq V$ and pair $i, j$ of non-neighbouring nodes such that $i \notin A$ and $j \in A$,
+\begin{align}
+\frac{\mu(x_{A+i},0_{\mathrm{rest}})}{\mu(x_A,0_{\mathrm{rest}})+\mu(x_{A+i},0_{\mathrm{rest}})}=\frac{\mu(x_{A- j+i},0_{\mathrm{rest}})}{\mu(x_{A-j},0_{\mathrm{rest}})+\mu(x_{A-j+i},0_{\mathrm{rest}})}, \label{eq:dcdaweew}
+\end{align}
+where $\mu(A,0_{\mathrm{rest}})$ meaning the probability that all other nodes other than $A$ will have value $0$. Note here we assume the same alphabet $\calX$ for all nodes, if different $\calX_s$ for different $x\in V$, here we just change $0_{\mathrm{rest}}$ to one  vector than has one specific fixed value at one specific node.
+\begin{align*}
+\frac{\mu(x_{A+i},0_{\mathrm{rest}})}{\mu(x_A,0_{\mathrm{rest}})+\mu(x_{A+i},0_{\mathrm{rest}})} & = \frac{\mu(x_i \mid x_A, 0_{\mathrm{rest}})\mu(x_A, 0_{\mathrm{rest}}) }{\mu(x_A,0_{\mathrm{rest}})+\mu(x_i \mid x_A, 0_{\mathrm{rest}})\mu(x_A, 0_{\mathrm{rest}}) } \\
+& = \frac{\mu(x_i \mid x_A, 0_{\mathrm{rest}}) }{1+\mu(x_i \mid x_A, 0_{\mathrm{rest}})}\\
+& = \frac{\mu(x_i \mid x_{A-y}, 0_{\mathrm{rest}}) }{1+\mu(x_i \mid x_{A-y}, 0_{\mathrm{rest}})}\\
+& = \frac{\mu(x_i \mid x_{A-y}, 0_{\mathrm{rest}})\mu(x_{A-y}, 0_{\mathrm{rest}}) }{\mu(x_{A-y}, 0_{\mathrm{rest}})+\mu(x_i \mid x_{A-y}, 0_{\mathrm{rest}})\mu(x_{A-y}, 0_{\mathrm{rest}})}\\
+& = \frac{\mu(x_{A- j+i},0_{\mathrm{rest}})}{\mu(x_{A-j},0_{\mathrm{rest}})+\mu(x_{A-j+i},0_{\mathrm{rest}})}\\
+\end{align*}
+\end{itemize}
+where the strictly positive has been used in the division and the third equality is from $\mathrm{P}$.
+
+(Above we prove $(\mathrm{G})\Rightarrow$ \cref{eq:dcdaweew}, we actually have $(\mathrm{G})\Leftrightarrow$ \cref{eq:dcdaweew} after we notice the third equality $\frac{1}{1+x}$ is a 1-1 mapping.)
+
+For simplicity of notation in the proof, in the following we always use the letter $c$ to represent a typical clique.
+
+Suppose first that $V: \calX^B \rightarrow \mathbb{R}$ is defined by
+\begin{align}
+    V(x_{A},0_{\mathrm{rest}})\coloneqq \sum_{B \subseteq A}(-1)^{|A-B|} \log \mu(x_{B},0_{\mathrm{rest}}),\text{ for all } A \subseteq V\label{eq:mweqrz3rg}
+\end{align}
+% Let $\omega \in \Omega$ and $A \subseteq L(\omega) .$ Then, by (6),
+% \begin{align*}
+% V(\omega A)=\sum_{B \subseteq A}(-1)^{|A-B|} \log \mu(\omega B)
+% \end{align*}y
+\tb{We first claim that $V(x_{A},0_{\mathrm{rest}})=0$ unless $A$ is a clique}. For, suppose $A$ contains two sites $i, j$ which are not neighbours. Then, from \cref{eq:dcdaweew}, we have
+\begin{align*}
+V(x_{A},0_{\mathrm{rest}})=& \sum_{B \subseteq A \atop i, j \in B}(-1)^{|A-B|} \log \mu(x_{B},0_{\mathrm{rest}}) + \sum_{B \subseteq A \atop i \in B, j \notin B}(-1)^{|A-B|} \log \mu(x_{B},0_{\mathrm{rest}})\\
+&+\sum_{B \subseteq A \atop i\notin B, j \in B}(-1)^{|A-B|} \log \mu(x_{B},0_{\mathrm{rest}})+\sum_{B \subseteq A \atop i, j \notin B}(-1)^{|A-B|} \log \mu(x_{B},0_{\mathrm{rest}}) \\
+=& \sum_{B \subseteq A-i-j}(-1)^{|A-B|} \log \left(\frac{\mu(x_{B+j+i},0_{\mathrm{rest}})}{\mu(x_{B+j},0_{\mathrm{rest}}))} / \frac{\mu(x_{B+i},0_{\mathrm{rest}})}{\mu(x_{B},0_{\mathrm{rest}})}\right) \\
+=& 0.
+\end{align*}
+The set of subsets is partially ordered by inclusion, and its \tb{M\"obius function} $\mu$ is given by
+\begin{align*}
+\mu(B, A)=(-1)^{|A-B|}
+\end{align*}
+We write \cref{eq:mweqrz3rg} in the form
+\begin{align*}
+ V(x_{A},0_{\mathrm{rest}})=\sum_{B \subseteq A} \mu(B, A) \log \mu(x_{B},0_{\mathrm{rest}})
+\end{align*}
+which yields
+\begin{align*}
+\log \mu(x_{A},0_{\mathrm{rest}})=\sum_{B \subseteq A}  V(x_{B},0_{\mathrm{rest}})
+\end{align*}
+by the {M\"obius Inversion Theorem} in \cref{thm:mobius}. Hence, by the above claim about clique,
+\begin{align*}
+\mu(x)= \exp \left(\sum_{c\in \calC(G)} V(x_c, 0_{\mathrm{rest}})\right) 
+\end{align*}
+Let $\psi_{c}\left(x_{c}\right) \coloneqq  \exp \big(V(x_c, 0_{\mathrm{rest}})\big)$. The proof is now complete.
+\end{proof}
+\begin{rema}\bfs{definition consistence}
+In \cref{eq:mweqrz3rg}, it seems there exists some ambiguous, since we may add more nodes taking $0$ to $A$ to get a larger set and the sum in the left side is over a larger set. However, please note here the additional sum is $0$, so it does not matter whether we should let $x_A$ contain $0$. And it is a consistent definition.
+\end{rema}
+% \begin{align*}
+% \mu(x)= \exp \left(\sum_{c\in \calC(G) \text{ and $x_c$ takes no $0$}} V(x_c, 0_{\mathrm{rest}})\right) 
+% \end{align*}
+% \begin{rema}
+% Some explanation of ``Let $\psi_{c}\left(x_{c}\right) \coloneqq  \exp \big(\frac{1}{t_c}V(x_c, 0_{\mathrm{rest}})\big)$.'' 
+% \begin{itemize}
+%     \item In some sense, we are \tb{iterating over all cliques that takes no $0$ value.} 
+%     \item  When $c$ iterates over all cliques $\calC(G)$,  if $x_c$ has $0$ inside, we need to rule out the nodes that takes value $0$ and look at $V(x'_c, 0_{\mathrm{rest}})$.
+%     \begin{enumerate}
+%         \item If now the left nodes are not connected as a clique, we know $V(x'_c, 0_{\mathrm{rest}})=0$. 
+%         \item If now the left nodes are connected as a sub-clique, note that the sub-clique will be counted twice or more during the iteration over all cliques $\calC(G)$. In this case, we need to count how many time, denoted as times $t_c$, $x'_c$ will be counted in the iteration and do a average when define $\psi_{c}$.
+%     \end{enumerate}
+% \end{itemize}
+% \end{rema}
+Here I introduce one interesting theorem named M\"obius inversion formula which will be used in the proof of \cref{thm:ham_cliff} above.
+\begin{thma}\bfs{M\"obius Inversion Theorem}\label{thm:mobius}
+For a poset $P$, a set endowed with a partial order relation $\leq$, define the \tb{M\"obius function} $\mu$ of $P$ recursively by 
+$$\mu(s, s)=1 \text{  for  } s \in P, \quad \mu(s, u)=-\sum_{s \leq t< u} \mu(s, t), \text{ for }s<u \text{ in }P .$$
+(Here one assumes the summations are finite.) Then for $f, g: P \rightarrow K$, where $K$ is a commutative ring, we have
+$$g(t)=\sum_{s \leq t} f(s) \quad\text{ for all } t \in P$$
+if and only if
+\begin{align*}
+f(t)=\sum_{s \leq t} g(s) \mu(s, t) \quad \text { for all } t \in P .
+\end{align*}
+\end{thma}
+\begin{rema}\bfs{explanation}
+A partially ordered set (poset) $P$ is a set with a relation $\leq$ that is
+\begin{itemize}
+    \item Reflexive: $x \leq x$ holds for all $x \in P$;
+    \item Antisymmetric: if $x \leq y$ and $y \leq x$ then $x=y$;
+    \item Transitive: if $x \leq y$ and $y \leq z$ then $x \leq z$.
+\end{itemize}
+Examples of partially ordered sets include: the subsets of a set, ordered by inclusion, the real numbers, ordered by the usual $\leq$ relation, and the natural numbers, ordered by the relation "divides".
+
+An equivalent condition for \tb{M\"obius function} $\mu$ of $P$:
+$$\mu(s, s)=1 \text{  for  } s \in P, \quad \sum_{s \leq t\le u} \mu(s, t)=0, \text{ for }s<u \text{ in }P .$$
+
+If $P$ is the set of all finites subsets of the set $\{1,2,3, \ldots\}$, ordered by inclusion, then the M\"obius function is $\mu(X, Y)=(-1)^{|Y|-|X|}$. (W.L.O.G., we assume $s=\{1\}$ and $u=\{1,2,...,n\}$. Then $\sum_{s \leq t\le u} \mu(s, t)=(1-1)^{n-1}=0$ (from combination $(1+a)^n$, set $a=-1$) , for $s<u$.)
+
+The M\"obius inversion formula implies
+\begin{align*}
+g(X)=\sum_{Y \subseteq X} f(Y) \quad \text { iff } \quad f(X)=\sum_{Y \subseteq X} g(Y)(-1)^{|X|-|Y|}
+\end{align*}
+and, for all subsets of $\{1,2, \ldots, n\}$,
+\begin{align*}
+g(X)=\sum_{\{1, \ldots, n\} \supset Y \supset X} f(Y) \text { iff } f(X)=\sum_{\{1, \ldots, n\} \supset Y \supset X} g(Y)(-1)^{|Y|-|X|} .
+\end{align*}
+\end{rema}
+\begin{proof}
+We show that $g(t)=\sum_{s \leq t} f(s)$ if and only if $f(t)=\sum_{s \leq t} g(s) \mu(s, t)$, the proof of the other statement is similar. The statement makes sense only if we assume that for any $x$ only finitely many $y$ 's satisfy $y \leq x$. Let us fix an element $x_{0}$ and consider only elements that are less than or equal to $x_{0}$. We may assume this is our entire poset $P$. 
+
+Let us associate to $P$ a square matrix $Z$ whose rows and columns are indexed with the elements of $P$, and which \tb{has a $1$ in row $x$, column $y$ exactly when $x \leq y$, and has a zero in all other rows:} 
+
+\emph{Multiplying the row vector $\underline{f}:=(f(y) \mid y \in P)$ with the matrix $Z$ from the right yields a row vector whose entry associated to $x$ is $\sum_{y \leq x} f(y)$.}
+
+Let us introduce $\underline{g}:=(g(x) \mid x \in P)$, and the matrix $M$ whose \tb{entry in row $x$ and column $y$ is $\mu(x, y)$ if $x \leq y$ and zero otherwise}. The  statement in \cref{thm:mobius} is equivalent to saying
+\begin{align*}
+\underline{g}=\underline{f} \ast Z \quad \text { if and only if } \quad \underline{f}=\underline{g} \ast M .
+\end{align*}
+This is obviously true if the matrices $M$ and $Z$ are inverses of each other, so it suffices to show
+\begin{align*}
+I=M \ast Z
+\end{align*}
+To verify this we need to check that the product of a row indexed by $x$ in $M$ and a row indexed by $y$ in $Z$ is $\delta_{x, y}$, the Kronecker delta function. In other words we need to check
+\begin{align*}
+\sum_{x \leq z \leq y} \mu(x, z)=\delta_{x, y}
+\end{align*}
+which is exactly the definition of the Möbius function.
+\end{proof}
+\subsubsection{Markov Property of Directed Graphical Models}
+See ``Graphical Models Notes''
+
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv,StringDefinitions,adv_dnn}
+\end{document}
